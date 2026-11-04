@@ -39,3 +39,20 @@ export const tokenDetailSchema = tokenSchema.extend({
 });
 
 export type TokenDetail = z.infer<typeof tokenDetailSchema>;
+
+/** GET /v4/tokens/prices/history: one row per day with samples, OHLC in USD. */
+export const priceHistoryPointSchema = z.object({
+  /** Unix day: days since 1970-01-01 UTC. */
+  day: z.number().int(),
+  open: z.number(),
+  close: z.number(),
+  min: z.number(),
+  max: z.number(),
+  avg: z.number(),
+  samples: z.number().int(),
+  source: z.string().nullish(),
+});
+
+export type PriceHistoryPoint = z.infer<typeof priceHistoryPointSchema>;
+
+export const priceHistorySchema = z.array(priceHistoryPointSchema);

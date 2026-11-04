@@ -1,7 +1,7 @@
 import { cache } from "react";
 import { isAddress } from "viem";
-import { fetchToken, fetchTokens, type FetchTokensParams } from "@/lib/merkl/client";
-import type { Token, TokenDetail } from "@/lib/merkl/schemas";
+import { fetchToken, fetchTokenPriceHistory, fetchTokens, type FetchTokensParams } from "@/lib/merkl/client";
+import type { PriceHistoryPoint, Token, TokenDetail } from "@/lib/merkl/schemas";
 import { merklTokenId, type TokenRef } from "@/lib/tokens/routes";
 import type { TokenListQuery, TokenPageSize } from "@/lib/tokens/search-params";
 
@@ -49,3 +49,18 @@ export async function listTokens(query: TokenListQuery): Promise<TokenListResult
 
 /** Request-scoped memo: the page and its generateMetadata share one Merkl call. */
 export const getToken = cache((ref: TokenRef): Promise<TokenDetail> => fetchToken(merklTokenId(ref)));
+
+export const PRICE_HISTORY_DAYS_DEFAULT = 90;
+
+const MS_PER_DAY = 86_400_000;
+
+/** Daily price rows for the last `days` days, oldest first. */
+export function getTokenPriceHistory(
+  ref: TokenRef,
+  { days = PRICE_HISTORY_DAYS_DEFAULT }: { days?: number } = {},
+): Promise<PriceHistoryPoint[]> {
+  const today = Math.floor(Date.now() / MS_PER_DAY);
+  return fetchTokenPriceHistory({ ...ref, from: today - days, to: today }).then((rows) =>
+    rows.toSorted((a, b) => a.day - b.day),
+  );
+}
