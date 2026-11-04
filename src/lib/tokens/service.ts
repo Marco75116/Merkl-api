@@ -89,11 +89,20 @@ export async function getTokenPriceHistory(ref: TokenRef): Promise<PriceHistoryP
   return rows.toSorted((a, b) => a.day - b.day);
 }
 
-/** Whether Merkl allows this token to be distributed as a campaign reward. */
-export async function isRewardToken(ref: TokenRef): Promise<boolean> {
+/**
+ * Lower-cased addresses of every reward token on a chain. Fetched whole (a few
+ * hundred entries) rather than searched per token, so one cache entry per
+ * chain answers every token page on it.
+ */
+async function getRewardTokenAddresses(chainId: number): Promise<string[]> {
   "use cache";
   cacheLife("daily");
-  const byChain = await fetchRewardTokens({ chainId: ref.chainId, search: ref.address });
-  const wanted = ref.address.toLowerCase();
-  return (byChain[String(ref.chainId)] ?? []).some((t) => t.address.toLowerCase() === wanted);
+  const byChain = await fetchRewardTokens({ chainId });
+  return (byChain[String(chainId)] ?? []).map((t) => t.address.toLowerCase());
+}
+
+/** Whether Merkl allows this token to be distributed as a campaign reward. */
+export async function isRewardToken(ref: TokenRef): Promise<boolean> {
+  const addresses = await getRewardTokenAddresses(ref.chainId);
+  return addresses.includes(ref.address.toLowerCase());
 }
