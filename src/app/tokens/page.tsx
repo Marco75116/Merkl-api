@@ -6,8 +6,7 @@ import { TokensPagination } from "@/components/tokens/tokens-pagination";
 import { TokensTable } from "@/components/tokens/tokens-table";
 import { TokensTableSkeleton } from "@/components/tokens/tokens-table-skeleton";
 import { loadTokenListQuery } from "@/lib/tokens/search-params";
-import { SUPPORTED_CHAINS } from "@/lib/constants/chains.constant";
-import { listTokens } from "@/lib/tokens/service";
+import { listChains, listTokens } from "@/lib/tokens/service";
 
 export const metadata: Metadata = {
   title: "Tokens · Merkl",
@@ -23,9 +22,9 @@ export default function TokensPage(props: PageProps<"/tokens">) {
       </header>
       {/* Everything above is the static shell; searchParams is read only inside the boundaries. */}
       <div className="space-y-4">
-        {/* The filter bar only reads the URL, so it paints before Merkl answers. */}
+        {/* The filter bar needs only the URL and the chain list (cached for a day), so it paints before the token query answers. */}
         <Suspense fallback={<TokenFiltersSkeleton />}>
-          <TokenFilters chains={SUPPORTED_CHAINS} />
+          <TokenFiltersLoader />
         </Suspense>
         <Suspense
           fallback={
@@ -41,14 +40,18 @@ export default function TokensPage(props: PageProps<"/tokens">) {
   );
 }
 
+async function TokenFiltersLoader() {
+  return <TokenFilters chains={await listChains()} />;
+}
+
 async function TokensList({ searchParams }: Pick<PageProps<"/tokens">, "searchParams">) {
   const query = await loadTokenListQuery(searchParams);
-  const result = await listTokens(query);
+  const [result, chains] = await Promise.all([listTokens(query), listChains()]);
 
   return (
     <>
       <div className="rounded-lg border">
-        <TokensTable tokens={result.items} />
+        <TokensTable tokens={result.items} chains={chains} />
       </div>
       <TokensPagination
         page={result.page}

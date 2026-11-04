@@ -2,10 +2,12 @@ import type { z } from "zod";
 import { MERKL_API_URL, MERKL_TIMEOUT_MS } from "@/lib/constants/global.constant";
 import { MerklError } from "@/lib/merkl/errors";
 import {
+  chainListSchema,
   priceHistorySchema,
   rewardTokensByChainSchema,
   tokenDetailSchema,
   tokenListSchema,
+  type Chain,
   type PriceHistoryPoint,
   type RewardTokensByChain,
   type Token,
@@ -106,4 +108,9 @@ export type FetchRewardTokensParams = {
 /** Tokens that can be distributed as campaign rewards, grouped by chain id. */
 export function fetchRewardTokens(params: FetchRewardTokensParams): Promise<RewardTokensByChain> {
   return request("/v4/tokens/reward", params, rewardTokensByChainSchema);
+}
+
+/** Every chain Merkl supports, in Merkl's order. */
+export function fetchChains(): Promise<Chain[]> {
+  return request("/v4/chains/", {}, chainListSchema);
 }

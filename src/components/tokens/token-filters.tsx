@@ -2,24 +2,26 @@
 
 import { debounce, useQueryStates } from "nuqs";
 import { useState, useTransition } from "react";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { ChainIcon } from "@/components/tokens/chain-icon";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import type { SupportedChain } from "@/lib/constants/chains.constant";
+  Combobox,
+  ComboboxContent,
+  ComboboxEmpty,
+  ComboboxInput,
+  ComboboxItem,
+  ComboboxList,
+} from "@/components/ui/combobox";
+import { Input } from "@/components/ui/input";
+import { InputGroupAddon } from "@/components/ui/input-group";
+import { Label } from "@/components/ui/label";
+import type { Chain } from "@/lib/merkl/schemas";
 import { SEARCH_MIN_LENGTH, tokenSearchParsers } from "@/lib/tokens/search-params";
 
-const ALL_CHAINS = "all";
 /** Keystrokes update local state at once; the URL (and the server fetch) wait for a pause. */
 const SEARCH_DEBOUNCE_MS = 400;
 
 type TokenFiltersProps = {
-  chains: readonly SupportedChain[];
+  chains: Chain[];
 };
 
 export function TokenFilters({ chains }: TokenFiltersProps) {
@@ -54,10 +56,8 @@ export function TokenFilters({ chains }: TokenFiltersProps) {
     }
   };
 
-  const items = [
-    { value: ALL_CHAINS, label: "All chains" },
-    ...chains.map((c) => ({ value: String(c.id), label: c.name })),
-  ];
+  // No selection means all chains; the clear button gets back there.
+  const selectedChain = chains.find((c) => c.id === chainId) ?? null;
 
   return (
     <div className="flex flex-wrap items-start gap-3" aria-busy={isPending}>
@@ -79,25 +79,34 @@ export function TokenFilters({ chains }: TokenFiltersProps) {
       </div>
       <div className="grid gap-1.5">
         <Label htmlFor="chain-filter">Chain</Label>
-        <Select
-          items={items}
-          value={chainId == null ? ALL_CHAINS : String(chainId)}
-          onValueChange={(value) =>
-            // Any filter change goes back to the first page.
-            setQuery({ chainId: value === ALL_CHAINS || value == null ? null : Number(value), page: null })
-          }
+        {/* Searchable: Merkl supports ~70 chains, too many to scan in a plain select. */}
+        <Combobox
+          items={chains}
+          value={selectedChain}
+          // Any filter change goes back to the first page.
+          onValueChange={(chain) => setQuery({ chainId: chain?.id ?? null, page: null })}
+          itemToStringLabel={(chain) => chain.name}
+          isItemEqualToValue={(a, b) => a.id === b.id}
         >
-          <SelectTrigger id="chain-filter" className="w-48">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {items.map((item) => (
-              <SelectItem key={item.value} value={item.value}>
-                {item.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+          <ComboboxInput id="chain-filter" placeholder="All chains" className="w-56" showClear={selectedChain != null}>
+            {selectedChain ? (
+              <InputGroupAddon>
+                <ChainIcon chain={selectedChain} />
+              </InputGroupAddon>
+            ) : null}
+          </ComboboxInput>
+          <ComboboxContent>
+            <ComboboxEmpty>No chain matches.</ComboboxEmpty>
+            <ComboboxList>
+              {(chain: Chain) => (
+                <ComboboxItem key={chain.id} value={chain}>
+                  <ChainIcon chain={chain} />
+                  {chain.name}
+                </ComboboxItem>
+              )}
+            </ComboboxList>
+          </ComboboxContent>
+        </Combobox>
       </div>
     </div>
   );

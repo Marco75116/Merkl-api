@@ -2,18 +2,20 @@ import Link from "next/link";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { getChainName } from "@/lib/constants/chains.constant";
+import { ChainBadge } from "@/components/tokens/chain-badge";
 import { formatPrice, formatUnixSeconds } from "@/lib/format";
-import type { TokenDetail } from "@/lib/merkl/schemas";
+import type { Chain, TokenDetail } from "@/lib/merkl/schemas";
 import { tokenPath } from "@/lib/tokens/routes";
 
 type TokenDetailProps = {
   token: TokenDetail;
+  /** Undefined when Merkl's chain list lacks the token's chain. */
+  chain: Chain | undefined;
   /** Rendered among the header badges; a slot so the page can stream it in behind its own Suspense. */
   rewardBadge?: React.ReactNode;
 };
 
-export function TokenDetailView({ token, rewardBadge }: TokenDetailProps) {
+export function TokenDetailView({ token, chain, rewardBadge }: TokenDetailProps) {
   const label = token.displaySymbol ?? token.symbol;
 
   return (
@@ -28,7 +30,7 @@ export function TokenDetailView({ token, rewardBadge }: TokenDetailProps) {
           <p className="truncate text-sm text-muted-foreground">{token.name ?? "—"}</p>
         </div>
         <div className="ml-auto flex flex-wrap gap-1">
-          <Badge variant="outline">{getChainName(token.chainId)}</Badge>
+          <ChainBadge chainId={token.chainId} chain={chain} />
           {token.verified ? <Badge variant="secondary">Verified</Badge> : <Badge variant="outline">Unverified</Badge>}
           {rewardBadge}
           {token.isNative ? <Badge variant="outline">Native</Badge> : null}

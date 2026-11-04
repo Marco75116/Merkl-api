@@ -25,8 +25,8 @@ Chosen resource: **token** (`/v4/tokens`).
 - Base URL `https://api.merkl.xyz`, Swagger at `/docs`, OpenAPI JSON at `/docs/json`.
 - Public, no API key. Rate limit 4200 req / 60 s (`x-ratelimit-*` headers).
 - Merkl responds with `cache-control: max-age=60`; mirror that TTL for token data.
-- `GET /v4/tokens/` params: `chainId`, `verified`, `isNative`, `search`, `symbol`, `name`, `address`, `page`, `items` (max 200). No count endpoint.
-- `GET /v4/tokens/{id}` single token. Chain filter uses a hardcoded subset of the biggest chains in `lib/constants/chains.constant.ts` (ids match `GET /v4/chains/`), not a live call.
+- `GET /v4/tokens/` params: `chainId`, `verified`, `isNative`, `search`, `symbol`, `name`, `address`, `page`, `items` (max 200). No count endpoint. `chainId` takes one id only (a list is a 400, a repeated param keeps the last).
+- `GET /v4/tokens/{id}` single token. Chain names, icons and filter options come from `GET /v4/chains/` (~70 chains, test chains excluded by default), cached daily.
 - `GET /v4/tokens/reward/{chainId}` tokens usable as rewards.
 
 ## Stack
@@ -63,7 +63,7 @@ src/
 
 ### Caching
 - Next Cache Components: `"use cache"` + `cacheLife(...)` inside the `lib/tokens` service functions, not in components. Pages and route handlers share the entries.
-- Two profiles in `next.config.ts` by volatility: `merkl` (revalidate 60 s, matching Merkl) for lists and details, `daily` (1 h) for price history and the per-chain reward list. Keep `expire` >= 5 min so entries can join prefetches.
+- Two profiles in `next.config.ts` by volatility: `merkl` (revalidate 60 s, matching Merkl) for lists and details, `daily` (1 h) for price history, the per-chain reward list and the chain list. Keep `expire` >= 5 min so entries can join prefetches.
 - Cache key is the serialised arguments: normalise before the cached call so equivalent URLs hit the same entry. Pass strings, not objects, to React `cache()` (it compares by identity).
 - No `connection()` in pages: it would force a Merkl call per request and keep cached data out of prefetches.
 - Storage is per-instance in-memory; swap to Redis via `"use cache: remote"` + `cacheHandlers` without touching callers.
