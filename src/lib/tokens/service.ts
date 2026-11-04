@@ -1,3 +1,4 @@
+import { cacheLife } from "next/cache";
 import { cache } from "react";
 import { isAddress } from "viem";
 import {
@@ -14,6 +15,10 @@ import type { TokenListQuery, TokenPageSize } from "@/lib/tokens/search-params";
 /**
  * Domain layer for tokens. Pages (and later route handlers) call these
  * functions and nothing else; they are the only callers of the Merkl client.
+ *
+ * Caching lives here: each Merkl read is a `"use cache"` scope keyed on its
+ * serialised arguments and shared across requests, with lifetimes from the
+ * `cacheLife` profiles in `next.config.ts`.
  */
 
 export type TokenListResult = {
@@ -35,6 +40,8 @@ function toSearchFilters(search: string | null): Pick<FetchTokensParams, "search
 }
 
 export async function listTokens(query: TokenListQuery): Promise<TokenListResult> {
+  "use cache";
+  cacheLife("merkl");
   const items = await fetchTokens({
     page: query.page - 1, // URL is 1-indexed for humans, Merkl is 0-indexed
     items: query.items,
@@ -53,21 +60,49 @@ export async function listTokens(query: TokenListQuery): Promise<TokenListResult
   };
 }
 
-/** Request-scoped memo: the page and its generateMetadata share one Merkl call. */
-export const getToken = cache((ref: TokenRef): Promise<TokenDetail> => fetchToken(merklTokenId(ref)));
+async function fetchTokenCached(id: string): Promise<TokenDetail> {
+  "use cache";
+  cacheLife("merkl");
+  return fetchToken(id);
+}
+
+/**
+ * Request-scoped memo on top, so the page and its generateMetadata share one
+ * call even on a cache miss. Keyed on the id string: `cache()` compares
+ * arguments by identity, and each caller parses its own `ref` object.
+ */
+const getTokenById = cache(fetchTokenCached);
+
+export function getToken(ref: TokenRef): Promise<TokenDetail> {
+  return getTokenById(merklTokenId(ref));
+}
 
 /**
  * Daily price rows over Merkl's default window (the last 365 days), oldest
  * first. No explicit `from`: some feeds stop months before today, and a
  * narrower window would hide the samples that do exist.
  */
-export function getTokenPriceHistory(ref: TokenRef): Promise<PriceHistoryPoint[]> {
-  return fetchTokenPriceHistory(ref).then((rows) => rows.toSorted((a, b) => a.day - b.day));
+export async function getTokenPriceHistory(ref: TokenRef): Promise<PriceHistoryPoint[]> {
+  "use cache";
+  cacheLife("daily");
+  const rows = await fetchTokenPriceHistory(ref);
+  return rows.toSorted((a, b) => a.day - b.day);
+}
+
+/**
+ * Lower-cased addresses of every reward token on a chain. Fetched whole (a few
+ * hundred entries) rather than searched per token, so one cache entry per
+ * chain answers every token page on it.
+ */
+async function getRewardTokenAddresses(chainId: number): Promise<string[]> {
+  "use cache";
+  cacheLife("daily");
+  const byChain = await fetchRewardTokens({ chainId });
+  return (byChain[String(chainId)] ?? []).map((t) => t.address.toLowerCase());
 }
 
 /** Whether Merkl allows this token to be distributed as a campaign reward. */
 export async function isRewardToken(ref: TokenRef): Promise<boolean> {
-  const byChain = await fetchRewardTokens({ chainId: ref.chainId, search: ref.address });
-  const wanted = ref.address.toLowerCase();
-  return (byChain[String(ref.chainId)] ?? []).some((t) => t.address.toLowerCase() === wanted);
+  const addresses = await getRewardTokenAddresses(ref.chainId);
+  return addresses.includes(ref.address.toLowerCase());
 }

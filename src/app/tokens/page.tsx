@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { connection } from "next/server";
 import { Suspense } from "react";
 import { TokenFilters } from "@/components/tokens/token-filters";
 import { TokenFiltersSkeleton } from "@/components/tokens/token-filters-skeleton";
@@ -44,8 +43,6 @@ export default function TokensPage(props: PageProps<"/tokens">) {
 
 async function TokensList({ searchParams }: Pick<PageProps<"/tokens">, "searchParams">) {
   const query = await loadTokenListQuery(searchParams);
-  // Token data is request-time only; keep it out of Next's runtime prerender.
-  await connection();
   const result = await listTokens(query);
 
   return (
