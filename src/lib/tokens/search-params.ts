@@ -24,7 +24,7 @@ export const SEARCH_MIN_LENGTH = 3;
 
 export const tokenSearchParsers = {
   chainId: parseAsInteger,
-  /** Verified tokens by default; `?verified=false` opts into unverified ones. */
+  /** Verified tokens only by default; `?verified=false` lists every token, verified or not. */
   verified: parseAsBoolean.withDefault(true),
   search: parseAsString,
   page: parseAsInteger.withDefault(1),

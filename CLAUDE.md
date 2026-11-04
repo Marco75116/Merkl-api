@@ -25,7 +25,7 @@ Chosen resource: **token** (`/v4/tokens`).
 - Base URL `https://api.merkl.xyz`, Swagger at `/docs`, OpenAPI JSON at `/docs/json`.
 - Public, no API key. Rate limit 4200 req / 60 s (`x-ratelimit-*` headers).
 - Merkl responds with `cache-control: max-age=60`; mirror that TTL for token data.
-- `GET /v4/tokens/` params: `chainId`, `verified`, `isNative`, `search`, `symbol`, `name`, `address`, `page`, `items` (max 200). No count endpoint. `chainId` takes one id only (a list is a 400, a repeated param keeps the last).
+- `GET /v4/tokens/` params: `chainId`, `verified`, `isNative`, `search`, `symbol`, `name`, `address`, `page`, `items` (max 200). No count endpoint. `chainId` takes one id only (a list is a 400, a repeated param keeps the last). `verified=false` behaves like omitting it (returns all).
 - `GET /v4/tokens/{id}` single token. Chain names, icons and filter options come from `GET /v4/chains/` (~70 chains, test chains excluded by default), cached daily.
 - `GET /v4/tokens/reward/{chainId}` tokens usable as rewards.
 

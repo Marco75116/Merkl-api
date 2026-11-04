@@ -48,7 +48,8 @@ export async function listTokens(query: TokenListQuery): Promise<TokenListResult
     page: query.page - 1, // URL is 1-indexed for humans, Merkl is 0-indexed
     items: query.items,
     chainId: query.chainId,
-    verified: query.verified,
+    // Merkl's `verified=false` returns every token, like omitting it: only `true` filters.
+    verified: query.verified ? true : null,
     ...toSearchFilters(query.search),
     missingPrice: false,
     missingIcons: false,

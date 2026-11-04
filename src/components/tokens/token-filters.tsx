@@ -14,6 +14,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { InputGroupAddon } from "@/components/ui/input-group";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import type { Chain } from "@/lib/merkl/schemas";
 import { SEARCH_MIN_LENGTH, tokenSearchParsers } from "@/lib/tokens/search-params";
 
@@ -26,7 +27,7 @@ type TokenFiltersProps = {
 
 export function TokenFilters({ chains }: TokenFiltersProps) {
   const [isPending, startTransition] = useTransition();
-  const [{ chainId, search }, setQuery] = useQueryStates(tokenSearchParsers, {
+  const [{ chainId, search, verified }, setQuery] = useQueryStates(tokenSearchParsers, {
     shallow: false, // the server page owns the data, so re-render it
     startTransition,
   });
@@ -107,6 +108,18 @@ export function TokenFilters({ chains }: TokenFiltersProps) {
             </ComboboxList>
           </ComboboxContent>
         </Combobox>
+      </div>
+      <div className="grid gap-1.5">
+        <Label id="verified-filter">Verified</Label>
+        <div className="flex h-8 items-center gap-2">
+          <Switch
+            aria-labelledby="verified-filter"
+            checked={verified}
+            // `null` drops the param: verified-only is the default.
+            onCheckedChange={(checked) => setQuery({ verified: checked ? null : false, page: null })}
+          />
+          <span className="text-sm text-muted-foreground">{verified ? "Verified only" : "All tokens"}</span>
+        </div>
       </div>
     </div>
   );

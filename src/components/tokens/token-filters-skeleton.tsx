@@ -13,6 +13,10 @@ export function TokenFiltersSkeleton() {
         <Skeleton className="h-3.5 w-10" />
         <Skeleton className="h-8 w-56" />
       </div>
+      <div className="grid gap-1.5">
+        <Skeleton className="h-3.5 w-14" />
+        <Skeleton className="h-8 w-32" />
+      </div>
     </div>
   );
 }
