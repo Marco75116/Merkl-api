@@ -55,18 +55,19 @@ src/
     tokens/            feature components
   lib/
     merkl/             typed Merkl client: fetch + zod schemas + types. Knows nothing about Next.
-    cache/             caching primitive(s), swappable implementation
-    tokens/            domain layer: query parsing (nuqs parsers / zod), service functions used by both pages and route handlers
+    tokens/            domain layer: query parsing (nuqs parsers / zod), cached service functions used by both pages and route handlers
     utils.ts
 ```
 - Pages and Route Handlers both call the same service functions in `lib/tokens`. Never call Merkl directly from a page or a route handler.
 - Query param parsing is defined once (nuqs parsers) and reused by the client filter bar, the server page, and the route handler.
 
 ### Caching
-- Caching lives in the data layer, not in components.
-- Two tiers by volatility: reference data (chains) long TTL, token data 60 s TTL matching Merkl.
-- Cache key is the normalised, sorted query string so equivalent URLs hit the same entry.
-- The cache interface must be swappable (in-memory now, Redis later) without touching callers.
+- Next Cache Components: `"use cache"` + `cacheLife(...)` inside the `lib/tokens` service functions, not in components. Pages and route handlers share the entries.
+- Two profiles in `next.config.ts` by volatility: `merkl` (revalidate 60 s, matching Merkl) for lists and details, `daily` (1 h) for price history and the per-chain reward list. Keep `expire` >= 5 min so entries can join prefetches.
+- Cache key is the serialised arguments: normalise before the cached call so equivalent URLs hit the same entry. Pass strings, not objects, to React `cache()` (it compares by identity).
+- No `connection()` in pages: it would force a Merkl call per request and keep cached data out of prefetches.
+- Storage is per-instance in-memory; swap to Redis via `"use cache: remote"` + `cacheHandlers` without touching callers.
+- In production the default in-memory handler treats an entry past `revalidate` as a miss (no stale-while-revalidate; `next dev` does serve stale), so one request per query per TTL waits on Merkl. A custom/remote handler is what buys background refresh.
 - Also set `Cache-Control` headers on our own API responses so a CDN can cache them.
 
 ### Production readiness
