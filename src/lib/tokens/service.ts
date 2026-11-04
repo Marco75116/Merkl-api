@@ -56,19 +56,13 @@ export async function listTokens(query: TokenListQuery): Promise<TokenListResult
 /** Request-scoped memo: the page and its generateMetadata share one Merkl call. */
 export const getToken = cache((ref: TokenRef): Promise<TokenDetail> => fetchToken(merklTokenId(ref)));
 
-export const PRICE_HISTORY_DAYS_DEFAULT = 90;
-
-const MS_PER_DAY = 86_400_000;
-
-/** Daily price rows for the last `days` days, oldest first. */
-export function getTokenPriceHistory(
-  ref: TokenRef,
-  { days = PRICE_HISTORY_DAYS_DEFAULT }: { days?: number } = {},
-): Promise<PriceHistoryPoint[]> {
-  const today = Math.floor(Date.now() / MS_PER_DAY);
-  return fetchTokenPriceHistory({ ...ref, from: today - days, to: today }).then((rows) =>
-    rows.toSorted((a, b) => a.day - b.day),
-  );
+/**
+ * Daily price rows over Merkl's default window (the last 365 days), oldest
+ * first. No explicit `from`: some feeds stop months before today, and a
+ * narrower window would hide the samples that do exist.
+ */
+export function getTokenPriceHistory(ref: TokenRef): Promise<PriceHistoryPoint[]> {
+  return fetchTokenPriceHistory(ref).then((rows) => rows.toSorted((a, b) => a.day - b.day));
 }
 
 /** Whether Merkl allows this token to be distributed as a campaign reward. */

@@ -48,7 +48,8 @@ export const priceHistoryPointSchema = z.object({
   close: z.number(),
   min: z.number(),
   max: z.number(),
-  avg: z.number(),
+  /** Null on older rows. */
+  avg: z.number().nullable(),
   samples: z.number().int(),
   source: z.string().nullish(),
 });

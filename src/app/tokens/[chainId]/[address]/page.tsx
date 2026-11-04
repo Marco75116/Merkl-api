@@ -8,7 +8,7 @@ import { TokenDetailView } from "@/components/tokens/token-detail";
 import { TokenPriceChart } from "@/components/tokens/token-price-chart";
 import { MerklError } from "@/lib/merkl/errors";
 import { tokenRefSchema } from "@/lib/tokens/routes";
-import { getToken, getTokenPriceHistory, isRewardToken, PRICE_HISTORY_DAYS_DEFAULT } from "@/lib/tokens/service";
+import { getToken, getTokenPriceHistory, isRewardToken } from "@/lib/tokens/service";
 
 export async function generateMetadata({ params }: PageProps<"/tokens/[chainId]/[address]">): Promise<Metadata> {
   const ref = tokenRefSchema.safeParse(await params);
@@ -58,10 +58,7 @@ async function TokenLoader({ params }: Pick<PageProps<"/tokens/[chainId]/[addres
   return (
     <>
       <TokenDetailView token={token} isReward={isReward} />
-      <TokenPriceChart
-        points={history?.map(({ day, close, min, max }) => ({ day, close, min, max })) ?? null}
-        days={PRICE_HISTORY_DAYS_DEFAULT}
-      />
+      <TokenPriceChart points={history?.map(({ day, close, min, max }) => ({ day, close, min, max })) ?? null} />
     </>
   );
 }

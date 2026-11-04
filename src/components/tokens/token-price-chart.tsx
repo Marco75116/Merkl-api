@@ -15,9 +15,8 @@ export type PricePoint = {
 };
 
 type TokenPriceChartProps = {
-  /** `null` when the history could not be loaded; `[]` when Merkl has no feed. */
+  /** Oldest first. `null` when the history could not be loaded; `[]` when Merkl has no feed. */
   points: PricePoint[] | null;
-  days: number;
 };
 
 const chartConfig = {
@@ -25,18 +24,24 @@ const chartConfig = {
   close: { label: "Close", color: "var(--primary)" },
 } satisfies ChartConfig;
 
-export function TokenPriceChart({ points, days }: TokenPriceChartProps) {
+export function TokenPriceChart({ points }: TokenPriceChartProps) {
+  const first = points?.[0];
+  const last = points?.at(-1);
   return (
     <Card>
       <CardHeader>
         <CardTitle>Price history</CardTitle>
-        <CardDescription>Daily close in USD, last {days} days</CardDescription>
+        <CardDescription>
+          {first && last
+            ? `Daily close in USD, ${formatUnixDay(first.day, "long")} to ${formatUnixDay(last.day, "long")}`
+            : "Daily close in USD"}
+        </CardDescription>
       </CardHeader>
       <CardContent>
         {points == null ? (
           <Empty>Price history is unavailable right now.</Empty>
         ) : points.length === 0 ? (
-          <Empty>Merkl has no price feed for this token.</Empty>
+          <Empty>Merkl has no price samples for this token in the last year.</Empty>
         ) : (
           <ChartContainer config={chartConfig} className="h-64 w-full">
             <LineChart data={points} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
