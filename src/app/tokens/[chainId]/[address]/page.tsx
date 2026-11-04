@@ -32,7 +32,7 @@ export async function generateMetadata({ params }: PageProps<"/tokens/[chainId]/
  */
 export default function TokenPage(props: PageProps<"/tokens/[chainId]/[address]">) {
   return (
-    <main className="mx-auto w-full max-w-4xl space-y-6 px-6 py-10">
+    <main className="mx-auto w-full max-w-6xl space-y-6 px-6 py-10">
       <Link href="/tokens" className="text-sm text-muted-foreground underline-offset-4 hover:underline">
         ← All tokens
       </Link>
