@@ -53,8 +53,16 @@ export async function listTokens(query: TokenListQuery): Promise<TokenListResult
   };
 }
 
-/** Request-scoped memo: the page and its generateMetadata share one Merkl call. */
-export const getToken = cache((ref: TokenRef): Promise<TokenDetail> => fetchToken(merklTokenId(ref)));
+/**
+ * Request-scoped memo: the page and its generateMetadata share one Merkl call.
+ * Keyed on the id string: `cache()` compares arguments by identity, and each
+ * caller parses its own `ref` object.
+ */
+const getTokenById = cache(fetchToken);
+
+export function getToken(ref: TokenRef): Promise<TokenDetail> {
+  return getTokenById(merklTokenId(ref));
+}
 
 /**
  * Daily price rows over Merkl's default window (the last 365 days), oldest
