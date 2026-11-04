@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { connection } from "next/server";
 import { Suspense } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -51,8 +50,6 @@ export default function TokenPage(props: PageProps<"/tokens/[chainId]/[address]"
 async function resolveRef(params: Params["params"]): Promise<TokenRef> {
   const ref = tokenRefSchema.safeParse(await params);
   if (!ref.success) notFound();
-  // Token data is request-time only; keep it out of Next's runtime prerender.
-  await connection();
   return ref.data;
 }
 

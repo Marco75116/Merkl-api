@@ -1,3 +1,4 @@
+import { cacheLife } from "next/cache";
 import { cache } from "react";
 import { isAddress } from "viem";
 import {
@@ -14,6 +15,10 @@ import type { TokenListQuery, TokenPageSize } from "@/lib/tokens/search-params";
 /**
  * Domain layer for tokens. Pages (and later route handlers) call these
  * functions and nothing else; they are the only callers of the Merkl client.
+ *
+ * Caching lives here: each Merkl read is a `"use cache"` scope keyed on its
+ * serialised arguments and shared across requests, with lifetimes from the
+ * `cacheLife` profiles in `next.config.ts`.
  */
 
 export type TokenListResult = {
@@ -35,6 +40,8 @@ function toSearchFilters(search: string | null): Pick<FetchTokensParams, "search
 }
 
 export async function listTokens(query: TokenListQuery): Promise<TokenListResult> {
+  "use cache";
+  cacheLife("merkl");
   const items = await fetchTokens({
     page: query.page - 1, // URL is 1-indexed for humans, Merkl is 0-indexed
     items: query.items,
@@ -53,12 +60,18 @@ export async function listTokens(query: TokenListQuery): Promise<TokenListResult
   };
 }
 
+async function fetchTokenCached(id: string): Promise<TokenDetail> {
+  "use cache";
+  cacheLife("merkl");
+  return fetchToken(id);
+}
+
 /**
- * Request-scoped memo: the page and its generateMetadata share one Merkl call.
- * Keyed on the id string: `cache()` compares arguments by identity, and each
- * caller parses its own `ref` object.
+ * Request-scoped memo on top, so the page and its generateMetadata share one
+ * call even on a cache miss. Keyed on the id string: `cache()` compares
+ * arguments by identity, and each caller parses its own `ref` object.
  */
-const getTokenById = cache(fetchToken);
+const getTokenById = cache(fetchTokenCached);
 
 export function getToken(ref: TokenRef): Promise<TokenDetail> {
   return getTokenById(merklTokenId(ref));
@@ -69,12 +82,17 @@ export function getToken(ref: TokenRef): Promise<TokenDetail> {
  * first. No explicit `from`: some feeds stop months before today, and a
  * narrower window would hide the samples that do exist.
  */
-export function getTokenPriceHistory(ref: TokenRef): Promise<PriceHistoryPoint[]> {
-  return fetchTokenPriceHistory(ref).then((rows) => rows.toSorted((a, b) => a.day - b.day));
+export async function getTokenPriceHistory(ref: TokenRef): Promise<PriceHistoryPoint[]> {
+  "use cache";
+  cacheLife("daily");
+  const rows = await fetchTokenPriceHistory(ref);
+  return rows.toSorted((a, b) => a.day - b.day);
 }
 
 /** Whether Merkl allows this token to be distributed as a campaign reward. */
 export async function isRewardToken(ref: TokenRef): Promise<boolean> {
+  "use cache";
+  cacheLife("daily");
   const byChain = await fetchRewardTokens({ chainId: ref.chainId, search: ref.address });
   const wanted = ref.address.toLowerCase();
   return (byChain[String(ref.chainId)] ?? []).some((t) => t.address.toLowerCase() === wanted);
