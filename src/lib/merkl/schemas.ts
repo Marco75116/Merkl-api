@@ -32,3 +32,10 @@ export const tokenSchema = z.object({
 export type Token = z.infer<typeof tokenSchema>;
 
 export const tokenListSchema = z.array(tokenSchema);
+
+/** GET /v4/tokens/{id}?returnUnderlying=true: `underlying` is null unless the token is a wrapper. */
+export const tokenDetailSchema = tokenSchema.extend({
+  underlying: tokenSchema.nullish(),
+});
+
+export type TokenDetail = z.infer<typeof tokenDetailSchema>;

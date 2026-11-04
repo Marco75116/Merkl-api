@@ -1,7 +1,7 @@
 import type { z } from "zod";
 import { MERKL_API_URL, MERKL_TIMEOUT_MS } from "@/lib/constants/global.constant";
 import { MerklError } from "@/lib/merkl/errors";
-import { tokenListSchema, tokenSchema, type Token } from "@/lib/merkl/schemas";
+import { tokenDetailSchema, tokenListSchema, type Token, type TokenDetail } from "@/lib/merkl/schemas";
 
 /**
  * Typed HTTP client for https://api.merkl.xyz. Knows nothing about Next,
@@ -69,6 +69,7 @@ export function fetchTokens(params: FetchTokensParams): Promise<Token[]> {
   return request("/v4/tokens/", params, tokenListSchema);
 }
 
-export function fetchToken(id: string): Promise<Token> {
-  return request(`/v4/tokens/${encodeURIComponent(id)}`, {}, tokenSchema);
+/** `id` is Merkl's canonical numeric id, or the `{chainId}-{address}` shorthand. */
+export function fetchToken(id: string): Promise<TokenDetail> {
+  return request(`/v4/tokens/${encodeURIComponent(id)}`, { returnUnderlying: true }, tokenDetailSchema);
 }

@@ -1,6 +1,7 @@
+import { cache } from "react";
 import { isAddress } from "viem";
 import { fetchToken, fetchTokens, type FetchTokensParams } from "@/lib/merkl/client";
-import type { Token } from "@/lib/merkl/schemas";
+import type { Token, TokenDetail } from "@/lib/merkl/schemas";
 import type { TokenListQuery, TokenPageSize } from "@/lib/tokens/search-params";
 
 /**
@@ -45,6 +46,5 @@ export async function listTokens(query: TokenListQuery): Promise<TokenListResult
   };
 }
 
-export function getToken(id: string): Promise<Token> {
-  return fetchToken(id);
-}
+/** Request-scoped memo: the page and its generateMetadata share one Merkl call. */
+export const getToken = cache((id: string): Promise<TokenDetail> => fetchToken(id));
