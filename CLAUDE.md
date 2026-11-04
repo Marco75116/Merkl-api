@@ -21,6 +21,7 @@ Chosen resource: **token** (`/v4/tokens`).
 
 ## Merkl API facts (verified)
 
+- Source of truth: tokens section of the API docs, https://api.merkl.xyz/docs#tag/tokens
 - Base URL `https://api.merkl.xyz`, Swagger at `/docs`, OpenAPI JSON at `/docs/json`.
 - Public, no API key. Rate limit 4200 req / 60 s (`x-ratelimit-*` headers).
 - Merkl responds with `cache-control: max-age=60`; mirror that TTL for token data.
