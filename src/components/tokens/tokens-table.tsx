@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import {
   Table,
@@ -11,6 +12,7 @@ import { TokenCell } from "@/components/tokens/token-cell";
 import { formatAddress, formatPrice } from "@/lib/format";
 import { getChainName } from "@/lib/constants/chains.constant";
 import type { Token } from "@/lib/merkl/schemas";
+import { tokenPath } from "@/lib/tokens/routes";
 
 type TokensTableProps = {
   tokens: Token[];
@@ -38,14 +40,21 @@ export function TokensTable({ tokens }: TokensTableProps) {
           </TableRow>
         ) : (
           tokens.map((token) => (
-            <TableRow key={token.id}>
+            // The whole row is clickable through the stretched link in the first
+            // cell: a real <a>, so it works without JS and is keyboard-reachable.
+            <TableRow key={token.id} className="relative cursor-pointer">
               <TableCell>
-                <TokenCell
-                  name={token.name}
-                  symbol={token.symbol}
-                  displaySymbol={token.displaySymbol}
-                  icon={token.icon}
-                />
+                <Link
+                  href={tokenPath(token)}
+                  className="after:absolute after:inset-0 after:content-[''] focus-visible:outline-none [&:focus-visible]:after:ring-2 [&:focus-visible]:after:ring-ring"
+                >
+                  <TokenCell
+                    name={token.name}
+                    symbol={token.symbol}
+                    displaySymbol={token.displaySymbol}
+                    icon={token.icon}
+                  />
+                </Link>
               </TableCell>
               <TableCell>
                 <Badge variant="outline">{getChainName(token.chainId)}</Badge>
