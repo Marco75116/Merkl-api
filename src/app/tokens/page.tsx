@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { connection } from "next/server";
 import { Suspense } from "react";
 import { TokenFilters } from "@/components/tokens/token-filters";
+import { TokenFiltersSkeleton } from "@/components/tokens/token-filters-skeleton";
 import { TokensPagination } from "@/components/tokens/tokens-pagination";
 import { TokensTable } from "@/components/tokens/tokens-table";
 import { TokensTableSkeleton } from "@/components/tokens/tokens-table-skeleton";
@@ -21,10 +22,22 @@ export default function TokensPage(props: PageProps<"/tokens">) {
         <h1 className="text-2xl font-semibold tracking-tight">Tokens</h1>
         <p className="text-sm text-muted-foreground">Tokens indexed by Merkl across supported chains.</p>
       </header>
-      {/* Everything above is the static shell; searchParams is read only inside the boundary. */}
-      <Suspense fallback={<TokensTableSkeleton />}>
-        <TokensList searchParams={props.searchParams} />
-      </Suspense>
+      {/* Everything above is the static shell; searchParams is read only inside the boundaries. */}
+      <div className="space-y-4">
+        {/* The filter bar only reads the URL, so it paints before Merkl answers. */}
+        <Suspense fallback={<TokenFiltersSkeleton />}>
+          <TokenFilters chains={SUPPORTED_CHAINS} />
+        </Suspense>
+        <Suspense
+          fallback={
+            <div className="rounded-lg border">
+              <TokensTableSkeleton />
+            </div>
+          }
+        >
+          <TokensList searchParams={props.searchParams} />
+        </Suspense>
+      </div>
     </main>
   );
 }
@@ -36,8 +49,7 @@ async function TokensList({ searchParams }: Pick<PageProps<"/tokens">, "searchPa
   const result = await listTokens(query);
 
   return (
-    <div className="space-y-4">
-      <TokenFilters chains={SUPPORTED_CHAINS} />
+    <>
       <div className="rounded-lg border">
         <TokensTable tokens={result.items} />
       </div>
@@ -47,6 +59,6 @@ async function TokensList({ searchParams }: Pick<PageProps<"/tokens">, "searchPa
         hasNextPage={result.hasNextPage}
         shownCount={result.items.length}
       />
-    </div>
+    </>
   );
 }
