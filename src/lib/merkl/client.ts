@@ -3,9 +3,11 @@ import { MERKL_API_URL, MERKL_TIMEOUT_MS } from "@/lib/constants/global.constant
 import { MerklError } from "@/lib/merkl/errors";
 import {
   priceHistorySchema,
+  rewardTokensByChainSchema,
   tokenDetailSchema,
   tokenListSchema,
   type PriceHistoryPoint,
+  type RewardTokensByChain,
   type Token,
   type TokenDetail,
 } from "@/lib/merkl/schemas";
@@ -93,4 +95,15 @@ export type FetchPriceHistoryParams = {
 /** Daily OHLC rows, oldest first. Empty when Merkl has no price feed for the token. */
 export function fetchTokenPriceHistory(params: FetchPriceHistoryParams): Promise<PriceHistoryPoint[]> {
   return request("/v4/tokens/prices/history", params, priceHistorySchema);
+}
+
+export type FetchRewardTokensParams = {
+  chainId: number;
+  /** Matches symbol, name or address (case-insensitive). */
+  search?: string | null;
+};
+
+/** Tokens that can be distributed as campaign rewards, grouped by chain id. */
+export function fetchRewardTokens(params: FetchRewardTokensParams): Promise<RewardTokensByChain> {
+  return request("/v4/tokens/reward", params, rewardTokensByChainSchema);
 }

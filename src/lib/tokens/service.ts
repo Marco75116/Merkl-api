@@ -1,6 +1,12 @@
 import { cache } from "react";
 import { isAddress } from "viem";
-import { fetchToken, fetchTokenPriceHistory, fetchTokens, type FetchTokensParams } from "@/lib/merkl/client";
+import {
+  fetchRewardTokens,
+  fetchToken,
+  fetchTokenPriceHistory,
+  fetchTokens,
+  type FetchTokensParams,
+} from "@/lib/merkl/client";
 import type { PriceHistoryPoint, Token, TokenDetail } from "@/lib/merkl/schemas";
 import { merklTokenId, type TokenRef } from "@/lib/tokens/routes";
 import type { TokenListQuery, TokenPageSize } from "@/lib/tokens/search-params";
@@ -50,17 +56,18 @@ export async function listTokens(query: TokenListQuery): Promise<TokenListResult
 /** Request-scoped memo: the page and its generateMetadata share one Merkl call. */
 export const getToken = cache((ref: TokenRef): Promise<TokenDetail> => fetchToken(merklTokenId(ref)));
 
-export const PRICE_HISTORY_DAYS_DEFAULT = 90;
+/**
+ * Daily price rows over Merkl's default window (the last 365 days), oldest
+ * first. No explicit `from`: some feeds stop months before today, and a
+ * narrower window would hide the samples that do exist.
+ */
+export function getTokenPriceHistory(ref: TokenRef): Promise<PriceHistoryPoint[]> {
+  return fetchTokenPriceHistory(ref).then((rows) => rows.toSorted((a, b) => a.day - b.day));
+}
 
-const MS_PER_DAY = 86_400_000;
-
-/** Daily price rows for the last `days` days, oldest first. */
-export function getTokenPriceHistory(
-  ref: TokenRef,
-  { days = PRICE_HISTORY_DAYS_DEFAULT }: { days?: number } = {},
-): Promise<PriceHistoryPoint[]> {
-  const today = Math.floor(Date.now() / MS_PER_DAY);
-  return fetchTokenPriceHistory({ ...ref, from: today - days, to: today }).then((rows) =>
-    rows.toSorted((a, b) => a.day - b.day),
-  );
+/** Whether Merkl allows this token to be distributed as a campaign reward. */
+export async function isRewardToken(ref: TokenRef): Promise<boolean> {
+  const byChain = await fetchRewardTokens({ chainId: ref.chainId, search: ref.address });
+  const wanted = ref.address.toLowerCase();
+  return (byChain[String(ref.chainId)] ?? []).some((t) => t.address.toLowerCase() === wanted);
 }

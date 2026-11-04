@@ -9,9 +9,11 @@ import { tokenPath } from "@/lib/tokens/routes";
 
 type TokenDetailProps = {
   token: TokenDetail;
+  /** `null` when the reward lookup failed: no badge rather than a wrong one. */
+  isReward: boolean | null;
 };
 
-export function TokenDetailView({ token }: TokenDetailProps) {
+export function TokenDetailView({ token, isReward }: TokenDetailProps) {
   const label = token.displaySymbol ?? token.symbol;
 
   return (
@@ -28,6 +30,7 @@ export function TokenDetailView({ token }: TokenDetailProps) {
         <div className="ml-auto flex flex-wrap gap-1">
           <Badge variant="outline">{getChainName(token.chainId)}</Badge>
           {token.verified ? <Badge variant="secondary">Verified</Badge> : <Badge variant="outline">Unverified</Badge>}
+          {isReward ? <Badge title="Can be distributed as a campaign reward">Reward</Badge> : null}
           {token.isNative ? <Badge variant="outline">Native</Badge> : null}
           {token.isTest ? <Badge variant="destructive">Test</Badge> : null}
         </div>
