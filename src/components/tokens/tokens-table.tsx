@@ -12,6 +12,7 @@ import { TokenCell } from "@/components/tokens/token-cell";
 import { formatAddress, formatPrice } from "@/lib/format";
 import { getChainName } from "@/lib/constants/chains.constant";
 import type { Token } from "@/lib/merkl/schemas";
+import { tokenPath } from "@/lib/tokens/routes";
 
 type TokensTableProps = {
   tokens: Token[];
@@ -44,7 +45,7 @@ export function TokensTable({ tokens }: TokensTableProps) {
             <TableRow key={token.id} className="relative cursor-pointer">
               <TableCell>
                 <Link
-                  href={`/tokens/${token.id}`}
+                  href={tokenPath(token)}
                   className="after:absolute after:inset-0 after:content-[''] focus-visible:outline-none [&:focus-visible]:after:ring-2 [&:focus-visible]:after:ring-ring"
                 >
                   <TokenCell

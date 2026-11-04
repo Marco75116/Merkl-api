@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getChainName } from "@/lib/constants/chains.constant";
 import { formatPrice, formatUnixSeconds } from "@/lib/format";
 import type { TokenDetail } from "@/lib/merkl/schemas";
+import { tokenPath } from "@/lib/tokens/routes";
 
 type TokenDetailProps = {
   token: TokenDetail;
@@ -73,7 +74,7 @@ export function TokenDetailView({ token }: TokenDetailProps) {
               <CardTitle>Underlying token</CardTitle>
             </CardHeader>
             <CardContent className="text-sm">
-              <Link href={`/tokens/${token.underlying.id}`} className="font-medium underline-offset-4 hover:underline">
+              <Link href={tokenPath(token.underlying)} className="font-medium underline-offset-4 hover:underline">
                 {token.underlying.displaySymbol ?? token.underlying.symbol}
               </Link>
               <span className="text-muted-foreground"> · {token.underlying.name ?? "—"}</span>
