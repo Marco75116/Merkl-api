@@ -26,7 +26,7 @@ Chosen resource: **token** (`/v4/tokens`).
 - Public, no API key. Rate limit 4200 req / 60 s (`x-ratelimit-*` headers).
 - Merkl responds with `cache-control: max-age=60`; mirror that TTL for token data.
 - `GET /v4/tokens/` params: `chainId`, `verified`, `isNative`, `search`, `symbol`, `name`, `address`, `page`, `items` (max 200). No count endpoint.
-- `GET /v4/tokens/{id}` single token. `GET /v4/chains/` for the chain filter (70 chains, changes rarely, cache long).
+- `GET /v4/tokens/{id}` single token. Chain filter uses a hardcoded subset of the biggest chains in `lib/constants/chains.constant.ts` (ids match `GET /v4/chains/`), not a live call.
 - `GET /v4/tokens/reward/{chainId}` tokens usable as rewards.
 
 ## Stack
@@ -70,7 +70,7 @@ src/
 - Also set `Cache-Control` headers on our own API responses so a CDN can cache them.
 
 ### Production readiness
-- Environment variables validated at startup (`MERKL_API_URL` with sensible default).
+- No environment variables: Merkl base URL and timeout are hardcoded in `lib/constants/global.constant.ts`.
 - Every external call has a timeout and typed error. Never leak Merkl error bodies to the client raw; map to our own error shape.
 - Route Handlers return consistent JSON envelopes and correct status codes.
 - No `any`. No unchecked casts of Merkl responses; parse with zod.

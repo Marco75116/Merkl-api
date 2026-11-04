@@ -1,0 +1,50 @@
+import { isAddress } from "viem";
+import { fetchToken, fetchTokens, type FetchTokensParams } from "@/lib/merkl/client";
+import type { Token } from "@/lib/merkl/schemas";
+import type { TokenListQuery, TokenPageSize } from "@/lib/tokens/search-params";
+
+/**
+ * Domain layer for tokens. Pages (and later route handlers) call these
+ * functions and nothing else; they are the only callers of the Merkl client.
+ */
+
+export type TokenListResult = {
+  items: Token[];
+  page: number;
+  pageSize: TokenPageSize;
+  /** Merkl exposes no count endpoint, so this is inferred from a full page. */
+  hasNextPage: boolean;
+};
+
+/**
+ * One search box, two upstream filters: an EVM address goes to Merkl's exact
+ * `address` filter, anything else to the free-text `search`. `strict: false`
+ * accepts any casing; Merkl matches addresses case-insensitively.
+ */
+function toSearchFilters(search: string | null): Pick<FetchTokensParams, "search" | "address"> {
+  if (search != null && isAddress(search, { strict: false })) return { address: search, search: null };
+  return { search, address: null };
+}
+
+export async function listTokens(query: TokenListQuery): Promise<TokenListResult> {
+  const items = await fetchTokens({
+    page: query.page - 1, // URL is 1-indexed for humans, Merkl is 0-indexed
+    items: query.items,
+    chainId: query.chainId,
+    verified: query.verified,
+    ...toSearchFilters(query.search),
+    missingPrice: false,
+    missingIcons: false,
+  });
+
+  return {
+    items,
+    page: query.page,
+    pageSize: query.items,
+    hasNextPage: items.length === query.items,
+  };
+}
+
+export function getToken(id: string): Promise<Token> {
+  return fetchToken(id);
+}
