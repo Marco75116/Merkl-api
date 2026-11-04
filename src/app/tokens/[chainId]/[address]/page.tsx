@@ -10,7 +10,7 @@ import { TokenPriceChart } from "@/components/tokens/token-price-chart";
 import { TokenPriceChartSkeleton } from "@/components/tokens/token-price-chart-skeleton";
 import { MerklError } from "@/lib/merkl/errors";
 import { tokenRefSchema, type TokenRef } from "@/lib/tokens/routes";
-import { getToken, getTokenPriceHistory, isRewardToken } from "@/lib/tokens/service";
+import { getToken, getTokenPriceHistory, isRewardToken, listChains } from "@/lib/tokens/service";
 
 type Params = Pick<PageProps<"/tokens/[chainId]/[address]">, "params">;
 
@@ -32,7 +32,7 @@ export async function generateMetadata({ params }: PageProps<"/tokens/[chainId]/
  */
 export default function TokenPage(props: PageProps<"/tokens/[chainId]/[address]">) {
   return (
-    <main className="mx-auto w-full max-w-4xl space-y-6 px-6 py-10">
+    <main className="mx-auto w-full max-w-6xl space-y-6 px-6 py-10">
       <Link href="/tokens" className="text-sm text-muted-foreground underline-offset-4 hover:underline">
         ← All tokens
       </Link>
@@ -61,9 +61,10 @@ function nullOnMerklError(error: unknown): null {
 
 async function TokenDetails({ params }: Params) {
   const ref = await resolveRef(params);
-  // Started before the token is awaited so the two requests overlap; the badge
+  // Started before the token is awaited so the requests overlap; the badge
   // then streams into the header on its own without holding the card back.
   const isReward = isRewardToken(ref).catch(nullOnMerklError);
+  const chains = listChains();
   const token = await getToken(ref).catch((error: unknown) => {
     if (error instanceof MerklError && error.kind === "not-found") notFound();
     throw error;
@@ -71,6 +72,7 @@ async function TokenDetails({ params }: Params) {
   return (
     <TokenDetailView
       token={token}
+      chain={(await chains).find((c) => c.id === token.chainId)}
       rewardBadge={
         <Suspense fallback={<Skeleton className="h-5 w-16 rounded-4xl" />}>
           <RewardBadge isReward={isReward} />

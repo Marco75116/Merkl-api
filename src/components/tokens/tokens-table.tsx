@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { Badge } from "@/components/ui/badge";
 import {
   Table,
   TableBody,
@@ -8,17 +7,19 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { ChainBadge } from "@/components/tokens/chain-badge";
 import { TokenCell } from "@/components/tokens/token-cell";
 import { formatAddress, formatPrice } from "@/lib/format";
-import { getChainName } from "@/lib/constants/chains.constant";
-import type { Token } from "@/lib/merkl/schemas";
+import type { Chain, Token } from "@/lib/merkl/schemas";
 import { tokenPath } from "@/lib/tokens/routes";
 
 type TokensTableProps = {
   tokens: Token[];
+  chains: Chain[];
 };
 
-export function TokensTable({ tokens }: TokensTableProps) {
+export function TokensTable({ tokens, chains }: TokensTableProps) {
+  const chainById = new Map(chains.map((c) => [c.id, c]));
 
   return (
     <Table>
@@ -57,7 +58,7 @@ export function TokensTable({ tokens }: TokensTableProps) {
                 </Link>
               </TableCell>
               <TableCell>
-                <Badge variant="outline">{getChainName(token.chainId)}</Badge>
+                <ChainBadge chainId={token.chainId} chain={chainById.get(token.chainId)} />
               </TableCell>
               <TableCell className="font-mono text-xs" title={token.address}>
                 {formatAddress(token.address)}

@@ -68,3 +68,14 @@ export const rewardTokensByChainSchema = z.record(
 );
 
 export type RewardTokensByChain = z.infer<typeof rewardTokensByChainSchema>;
+
+/** GET /v4/chains/: chains Merkl supports (test chains excluded by default). Only the fields this app needs. */
+export const chainSchema = z.object({
+  id: z.number().int(),
+  name: z.string(),
+  icon: z.string(),
+});
+
+export type Chain = z.infer<typeof chainSchema>;
+
+export const chainListSchema = z.array(chainSchema);

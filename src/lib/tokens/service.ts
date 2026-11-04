@@ -2,13 +2,15 @@ import { cacheLife } from "next/cache";
 import { cache } from "react";
 import { isAddress } from "viem";
 import {
+  fetchChains,
   fetchRewardTokens,
   fetchToken,
   fetchTokenPriceHistory,
   fetchTokens,
   type FetchTokensParams,
 } from "@/lib/merkl/client";
-import type { PriceHistoryPoint, Token, TokenDetail } from "@/lib/merkl/schemas";
+import { MerklError } from "@/lib/merkl/errors";
+import type { Chain, PriceHistoryPoint, Token, TokenDetail } from "@/lib/merkl/schemas";
 import { merklTokenId, type TokenRef } from "@/lib/tokens/routes";
 import type { TokenListQuery, TokenPageSize } from "@/lib/tokens/search-params";
 
@@ -46,7 +48,8 @@ export async function listTokens(query: TokenListQuery): Promise<TokenListResult
     page: query.page - 1, // URL is 1-indexed for humans, Merkl is 0-indexed
     items: query.items,
     chainId: query.chainId,
-    verified: query.verified,
+    // Merkl's `verified=false` returns every token, like omitting it: only `true` filters.
+    verified: query.verified ? true : null,
     ...toSearchFilters(query.search),
     missingPrice: false,
     missingIcons: false,
@@ -105,4 +108,24 @@ async function getRewardTokenAddresses(chainId: number): Promise<string[]> {
 export async function isRewardToken(ref: TokenRef): Promise<boolean> {
   const addresses = await getRewardTokenAddresses(ref.chainId);
   return addresses.includes(ref.address.toLowerCase());
+}
+
+/** Reference data: changes only when Merkl adds a chain. */
+async function fetchChainsCached(): Promise<Chain[]> {
+  "use cache";
+  cacheLife("daily");
+  const chains = await fetchChains();
+  return chains.toSorted((a, b) => a.name.localeCompare(b.name));
+}
+
+/**
+ * Every chain Merkl supports, by name. Chains only feed labels, icons and the
+ * filter options, so an upstream failure yields an empty list rather than a
+ * broken page. The catch sits outside the cache: the next request retries.
+ */
+export function listChains(): Promise<Chain[]> {
+  return fetchChainsCached().catch((error: unknown) => {
+    if (error instanceof MerklError) return [];
+    throw error;
+  });
 }
