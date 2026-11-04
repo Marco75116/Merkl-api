@@ -8,7 +8,7 @@ import { TokenDetailView } from "@/components/tokens/token-detail";
 import { TokenPriceChart } from "@/components/tokens/token-price-chart";
 import { MerklError } from "@/lib/merkl/errors";
 import { tokenRefSchema } from "@/lib/tokens/routes";
-import { getToken, getTokenPriceHistory, PRICE_HISTORY_DAYS_DEFAULT } from "@/lib/tokens/service";
+import { getToken, getTokenPriceHistory, isRewardToken, PRICE_HISTORY_DAYS_DEFAULT } from "@/lib/tokens/service";
 
 export async function generateMetadata({ params }: PageProps<"/tokens/[chainId]/[address]">): Promise<Metadata> {
   const ref = tokenRefSchema.safeParse(await params);
@@ -39,7 +39,7 @@ async function TokenLoader({ params }: Pick<PageProps<"/tokens/[chainId]/[addres
   const ref = tokenRefSchema.safeParse(await params);
   if (!ref.success) notFound();
   await connection();
-  const [token, history] = await Promise.all([
+  const [token, history, isReward] = await Promise.all([
     getToken(ref.data).catch((error: unknown) => {
       if (error instanceof MerklError && error.kind === "not-found") notFound();
       throw error;
@@ -49,10 +49,15 @@ async function TokenLoader({ params }: Pick<PageProps<"/tokens/[chainId]/[addres
       if (error instanceof MerklError) return null;
       throw error;
     }),
+    // Same for the reward flag: unknown (null) rather than a broken page.
+    isRewardToken(ref.data).catch((error: unknown) => {
+      if (error instanceof MerklError) return null;
+      throw error;
+    }),
   ]);
   return (
     <>
-      <TokenDetailView token={token} />
+      <TokenDetailView token={token} isReward={isReward} />
       <TokenPriceChart
         points={history?.map(({ day, close, min, max }) => ({ day, close, min, max })) ?? null}
         days={PRICE_HISTORY_DAYS_DEFAULT}

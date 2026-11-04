@@ -1,6 +1,12 @@
 import { cache } from "react";
 import { isAddress } from "viem";
-import { fetchToken, fetchTokenPriceHistory, fetchTokens, type FetchTokensParams } from "@/lib/merkl/client";
+import {
+  fetchRewardTokens,
+  fetchToken,
+  fetchTokenPriceHistory,
+  fetchTokens,
+  type FetchTokensParams,
+} from "@/lib/merkl/client";
 import type { PriceHistoryPoint, Token, TokenDetail } from "@/lib/merkl/schemas";
 import { merklTokenId, type TokenRef } from "@/lib/tokens/routes";
 import type { TokenListQuery, TokenPageSize } from "@/lib/tokens/search-params";
@@ -63,4 +69,11 @@ export function getTokenPriceHistory(
   return fetchTokenPriceHistory({ ...ref, from: today - days, to: today }).then((rows) =>
     rows.toSorted((a, b) => a.day - b.day),
   );
+}
+
+/** Whether Merkl allows this token to be distributed as a campaign reward. */
+export async function isRewardToken(ref: TokenRef): Promise<boolean> {
+  const byChain = await fetchRewardTokens({ chainId: ref.chainId, search: ref.address });
+  const wanted = ref.address.toLowerCase();
+  return (byChain[String(ref.chainId)] ?? []).some((t) => t.address.toLowerCase() === wanted);
 }

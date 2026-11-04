@@ -56,3 +56,14 @@ export const priceHistoryPointSchema = z.object({
 export type PriceHistoryPoint = z.infer<typeof priceHistoryPointSchema>;
 
 export const priceHistorySchema = z.array(priceHistoryPointSchema);
+
+/**
+ * GET /v4/tokens/reward: reward-eligible tokens grouped by chain id. Only the
+ * fields this app needs are kept; zod strips the rest.
+ */
+export const rewardTokensByChainSchema = z.record(
+  z.string(),
+  z.array(z.object({ id: z.string(), chainId: z.number().int(), address: z.string(), symbol: z.string() })),
+);
+
+export type RewardTokensByChain = z.infer<typeof rewardTokensByChainSchema>;
